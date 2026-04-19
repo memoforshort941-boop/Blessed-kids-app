@@ -1,29 +1,51 @@
-const cacheName = 'omnibiz-v2'; // Changed version to force an update
+const cacheName = 'omnibiz-pro-v1'; // Use a new version name
 const assets = [
   './',
   './index.html',
-  './sw.js'
+  './manifest.json',
+  './icon.png',
+  // We must cache these so the UI doesn't break offline!
+  'https://cdn.tailwindcss.com',
+  'https://unpkg.com/react@18/umd/react.development.js',
+  'https://unpkg.com/react-dom@18/umd/react-dom.development.js',
+  'https://unpkg.com/@babel/standalone/babel.min.js'
 ];
 
-// 1. Install and Cache everything immediately
+// 1. Install Phase: Download all assets into the phone's storage
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(cacheName).then(cache => {
+      console.log('OmniBiz: Building Offline Vault...');
+      // Use 'addAll' to grab every file in the assets list
       return cache.addAll(assets);
     })
   );
   self.skipWaiting(); 
 });
 
-// 2. The "Offline First" Logic
+// 2. Activate Phase: Cleanup old versions
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.filter(key => key !== cacheName)
+            .map(key => caches.delete(key))
+      );
+    })
+  );
+});
+
+// 3. Fetch Phase: "Offline First" Strategy
 self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(response => {
-      // If we have it in cache, return it. Otherwise, try the network.
+      // Return cached file if found, otherwise go to internet
       return response || fetch(e.request);
     }).catch(() => {
-      // Emergency: If both fail, return the main page
-      return caches.match('./index.html');
+      // If everything fails (no internet + not in cache), show the home page
+      if (e.request.mode === 'navigate') {
+        return caches.match('./index.html');
+      }
     })
   );
 });
