@@ -1,10 +1,29 @@
-const cacheName = 'omnibiz-v1';
-const assets = ['./', './index.html'];
+const cacheName = 'omnibiz-v2'; // Changed version to force an update
+const assets = [
+  './',
+  './index.html',
+  './sw.js'
+];
 
+// 1. Install and Cache everything immediately
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(cacheName).then(cache => cache.addAll(assets)));
+  e.waitUntil(
+    caches.open(cacheName).then(cache => {
+      return cache.addAll(assets);
+    })
+  );
+  self.skipWaiting(); 
 });
 
+// 2. The "Offline First" Logic
 self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+  e.respondWith(
+    caches.match(e.request).then(response => {
+      // If we have it in cache, return it. Otherwise, try the network.
+      return response || fetch(e.request);
+    }).catch(() => {
+      // Emergency: If both fail, return the main page
+      return caches.match('./index.html');
+    })
+  );
 });
