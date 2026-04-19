@@ -1,12 +1,12 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
-<head> <link rel="icon" type="image/png" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="manifest" href="manifest.json">
+<head> 
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OmniBiz Master Final</title>
+    <title>OmniBiz Master Pro Max</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -15,7 +15,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-up { animation: fadeUp 0.5s ease-out forwards; }
+        .animate-fade-up { animation: fadeUp 0.4s ease-out forwards; }
     </style>
 </head>
 <body class="bg-slate-950 antialiased selection:bg-blue-500/30">
@@ -37,7 +37,7 @@
                 try { return s ? JSON.parse(decodeURIComponent(escape(atob(s)))) : def; } catch { return def; }
             };
 
-            // --- APP STATE ---
+            // --- APP STATE (Merged Final + Pro) ---
             const [config, setConfig] = useState(() => secureLoad('omni_vFinal_cfg', { 
                 bizName: "Blessed Kids Academy", 
                 bizSub: "Business Hub", 
@@ -47,6 +47,7 @@
             const [inventory, setInventory] = useState(() => secureLoad('omni_vFinal_inv', []));
             const [appointments, setAppointments] = useState(() => secureLoad('omni_vFinal_app', []));
             const [expenses, setExpenses] = useState(() => secureLoad('omni_vFinal_exp', []));
+            const [debts, setDebts] = useState(() => secureLoad('omni_vFinal_debt', []));
             const [revenue, setRevenue] = useState(() => secureLoad('omni_vFinal_rev', 0));
 
             // --- AUTO-SAVE ---
@@ -55,23 +56,36 @@
                     secureSave('omni_vFinal_inv', inventory);
                     secureSave('omni_vFinal_app', appointments);
                     secureSave('omni_vFinal_exp', expenses);
+                    secureSave('omni_vFinal_debt', debts);
                     secureSave('omni_vFinal_cfg', config);
                     secureSave('omni_vFinal_rev', revenue);
                 }
-            }, [inventory, appointments, expenses, config, revenue, isAuthenticated]);
+            }, [inventory, appointments, expenses, debts, config, revenue, isAuthenticated]);
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                if(pinInput === config.pin) {
-                    setIsAuthenticated(true);
-                } else {
-                    alert("❌ Invalid PIN");
-                    setPinInput("");
-                }
+                if(pinInput === config.pin) setIsAuthenticated(true);
+                else { alert("❌ Invalid PIN"); setPinInput(""); }
             };
 
             const totalExp = expenses.reduce((a, b) => a + b.amount, 0);
+            const totalDebts = debts.reduce((a, b) => a + b.amount, 0);
             const profit = revenue - totalExp;
+
+            const shareReceipt = (name, price, status) => {
+                const msg = `*${config.bizName.toUpperCase()}*%0A---%0A*RECEIPT*%0AItem: ${name}%0AAmount: ₦${price.toLocaleString()}%0AStatus: ${status}%0A---%0A_Thank you for choosing us!_`;
+                window.open(`https://wa.me/?text=${msg}`);
+            };
+
+            const exportBackup = () => {
+                const data = { inventory, appointments, expenses, debts, revenue, config };
+                const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `OmniBiz_Pro_Backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            };
 
             if (!isAuthenticated) {
                 return (
@@ -85,10 +99,10 @@
                             <form onSubmit={handleLogin} className="space-y-6">
                                 <input 
                                     type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} 
-                                    placeholder="••••" className="w-full text-center text-5xl p-5 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] focus:border-blue-600 outline-none transition-all placeholder:text-slate-200 shadow-inner" 
+                                    placeholder="••••" className="w-full text-center text-5xl p-5 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] focus:border-blue-600 outline-none shadow-inner" 
                                     maxLength="4" autoFocus
                                 />
-                                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[2.5rem] font-black text-lg shadow-xl shadow-blue-500/20 active:scale-95 transition-all">UNLOCK SYSTEM</button>
+                                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[2.5rem] font-black text-lg shadow-xl active:scale-95 transition-all">UNLOCK SYSTEM</button>
                             </form>
                         </div>
                     </div>
@@ -96,7 +110,7 @@
             }
 
             return (
-                <div className="max-w-md mx-auto bg-white min-h-screen pb-36 relative shadow-2xl overflow-x-hidden no-scrollbar text-left font-sans">
+                <div className="max-w-md mx-auto bg-slate-50 min-h-screen pb-36 relative shadow-2xl overflow-x-hidden no-scrollbar text-left font-sans">
                     <header className="bg-blue-700 p-8 pb-20 rounded-b-[4rem] text-white shadow-2xl relative">
                         <div className="flex items-center gap-4">
                             <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center text-3xl shadow-inner overflow-hidden border border-white/20">
@@ -106,7 +120,7 @@
                                 <h1 className="text-2xl font-black truncate leading-none mb-1">{config.bizName}</h1>
                                 <p className="opacity-70 text-[9px] font-black uppercase tracking-[0.2em] truncate">{config.bizSub}</p>
                             </div>
-                            <button onClick={() => setIsAuthenticated(false)} className="text-xl opacity-50">🔒</button>
+                            <button onClick={() => setIsAuthenticated(false)} className="text-xl bg-black/10 p-3 rounded-2xl">🔒</button>
                         </div>
                     </header>
 
@@ -114,11 +128,11 @@
                     <div className="px-6 -mt-12 grid grid-cols-2 gap-4 relative z-10 text-center">
                         <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-50">
                             <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Revenue</p>
-                            <p className="text-xl font-black text-green-600 leading-none">₦{revenue.toLocaleString()}</p>
+                            <p className="text-xl font-black text-green-600">₦{revenue.toLocaleString()}</p>
                         </div>
                         <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-50">
-                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">Expenses</p>
-                            <p className="text-xl font-black text-red-500 leading-none">₦{totalExp.toLocaleString()}</p>
+                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1 text-red-500">Debts</p>
+                            <p className="text-xl font-black text-red-500">₦{totalDebts.toLocaleString()}</p>
                         </div>
                     </div>
 
@@ -131,24 +145,31 @@
                                 </div>
                                 
                                 <div className="grid gap-3">
-                                    <button onClick={()=>{setView('inventory'); setShowForm('inv')}} className="bg-white p-6 rounded-[2.2rem] border border-slate-100 shadow-sm flex items-center justify-between active:scale-95 transition-all">
+                                    <button onClick={()=>{setView('inventory')}} className="bg-white p-6 rounded-[2.2rem] border border-slate-100 shadow-sm flex items-center justify-between active:scale-95 transition-all">
                                         <div className="flex items-center gap-4">
                                             <span className="text-2xl bg-blue-50 p-3 rounded-2xl">📦</span>
-                                            <div><p className="font-black text-slate-900 leading-none mb-1">New Sale</p><p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Update Stock</p></div>
+                                            <div><p className="font-black text-slate-900 mb-1 leading-none">Sales/Stock</p><p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Update Items</p></div>
                                         </div>
                                         <span className="text-blue-600 text-xl font-black mr-2">→</span>
                                     </button>
-                                    <button onClick={()=>{setView('services'); setShowForm('appt')}} className="bg-white p-6 rounded-[2.2rem] border border-slate-100 shadow-sm flex items-center justify-between active:scale-95 transition-all text-purple-600">
+                                    <button onClick={()=>{setView('services')}} className="bg-white p-6 rounded-[2.2rem] border border-slate-100 shadow-sm flex items-center justify-between active:scale-95 transition-all text-purple-600">
                                         <div className="flex items-center gap-4">
                                             <span className="text-2xl bg-purple-50 p-3 rounded-2xl">📅</span>
-                                            <div><p className="font-black text-slate-900 leading-none mb-1">Book Client</p><p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Add Schedule</p></div>
+                                            <div><p className="font-black text-slate-900 mb-1 leading-none">Bookings</p><p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Client Schedules</p></div>
                                         </div>
                                         <span className="text-xl font-black mr-2">→</span>
+                                    </button>
+                                    <button onClick={()=>setShowForm('debt')} className="bg-white p-6 rounded-[2.2rem] border border-slate-100 shadow-sm flex items-center justify-between active:scale-95 transition-all text-orange-600">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-2xl bg-orange-50 p-3 rounded-2xl">📝</span>
+                                            <div><p className="font-black text-slate-900 mb-1 leading-none">Log Debt</p><p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Credit Sales</p></div>
+                                        </div>
+                                        <span className="text-xl font-black mr-2">+</span>
                                     </button>
                                     <button onClick={()=>setShowForm('exp')} className="bg-white p-6 rounded-[2.2rem] border border-slate-100 shadow-sm flex items-center justify-between active:scale-95 transition-all text-red-600">
                                         <div className="flex items-center gap-4">
                                             <span className="text-2xl bg-red-50 p-3 rounded-2xl">💸</span>
-                                            <div><p className="font-black text-slate-900 leading-none mb-1">Log Expense</p><p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Subtract Money</p></div>
+                                            <div><p className="font-black text-slate-900 mb-1 leading-none">Expense</p><p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Log Spending</p></div>
                                         </div>
                                         <span className="text-xl font-black mr-2">+</span>
                                     </button>
@@ -159,8 +180,8 @@
                         {view === 'inventory' && (
                             <div className="space-y-4 animate-fade-up">
                                 <div className="flex justify-between items-center px-2">
-                                    <h2 className="font-black text-2xl text-slate-900 tracking-tighter italic uppercase">Stock</h2>
-                                    <button onClick={()=>setShowForm('inv')} className="bg-blue-700 text-white text-[10px] font-black px-6 py-2.5 rounded-full shadow-lg">+ ADD NEW</button>
+                                    <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase italic">Inventory</h2>
+                                    <button onClick={()=>setShowForm('inv')} className="bg-blue-700 text-white text-[10px] font-black px-6 py-2.5 rounded-full shadow-lg">+ NEW ITEM</button>
                                 </div>
                                 {inventory.map(i => (
                                     <div key={i.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex justify-between items-center">
@@ -174,10 +195,10 @@
                                                 <button onClick={()=>{if(confirm("Delete item?")) setInventory(inventory.filter(x=>x.id!==i.id))}} className="text-slate-200">✕</button>
                                             </div>
                                             <button 
-                                                onClick={()=>{if(i.stock>0){setInventory(inventory.map(x=>x.id===i.id?{...x, stock:x.stock-1}:x)); setRevenue(revenue+i.price)}}} 
+                                                onClick={()=>{if(i.stock>0){setInventory(inventory.map(x=>x.id===i.id?{...x, stock:x.stock-1}:x)); setRevenue(revenue+i.price); if(confirm("WhatsApp Receipt?")) shareReceipt(i.name, i.price, "Paid Full")}}} 
                                                 className={`text-[10px] font-black px-6 py-3 rounded-2xl shadow-lg active:scale-90 transition-all ${i.stock > 0 ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-300 pointer-events-none'}`}
                                             >
-                                                {i.stock > 0 ? 'SELL UNIT' : 'SOLD OUT'}
+                                                SELL UNIT
                                             </button>
                                         </div>
                                     </div>
@@ -188,7 +209,7 @@
                         {view === 'services' && (
                             <div className="space-y-4 animate-fade-up">
                                 <div className="flex justify-between items-center px-2 text-purple-700">
-                                    <h2 className="font-black text-2xl tracking-tighter italic uppercase">Bookings</h2>
+                                    <h2 className="font-black text-2xl tracking-tighter uppercase italic">Bookings</h2>
                                     <button onClick={()=>setShowForm('appt')} className="bg-purple-700 text-white text-[10px] font-black px-6 py-2.5 rounded-full shadow-lg">+ ADD</button>
                                 </div>
                                 {appointments.map(a => (
@@ -204,9 +225,34 @@
                             </div>
                         )}
 
+                        {view === 'debts' && (
+                            <div className="space-y-4 animate-fade-up">
+                                <div className="flex justify-between items-center px-2 text-orange-600">
+                                    <h2 className="font-black text-2xl tracking-tighter uppercase italic">Debtors</h2>
+                                    <button onClick={()=>setShowForm('debt')} className="bg-orange-600 text-white text-[10px] font-black px-6 py-2.5 rounded-full shadow-lg">+ LOG DEBT</button>
+                                </div>
+                                {debts.map(d => (
+                                    <div key={d.id} className="bg-white p-6 rounded-[2.5rem] border-l-[12px] border-orange-500 shadow-sm flex justify-between items-center">
+                                        <div>
+                                            <p className="font-black text-slate-900 text-lg mb-1">{d.client}</p>
+                                            <p className="text-orange-600 font-black text-xl mb-1">₦{d.amount.toLocaleString()}</p>
+                                            <p className="text-slate-400 text-[10px] uppercase font-black">{d.reason}</p>
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <button onClick={()=>{setRevenue(revenue+d.amount); setDebts(debts.filter(x=>x.id!==d.id)); alert("Revenue updated!")}} className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-4 py-3 rounded-xl uppercase">Clear</button>
+                                            <button onClick={()=>{const msg = `Reminder from ${config.bizName}: Hi ${d.client}, friendly reminder of your balance ₦${d.amount.toLocaleString()}.`; window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);}} className="bg-blue-50 text-blue-700 text-[9px] font-black px-4 py-3 rounded-xl uppercase">Remind</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {view === 'settings' && (
                             <div className="space-y-6 animate-fade-up">
-                                <h2 className="font-black text-2xl text-slate-900 px-2 tracking-tighter uppercase italic">App Setup</h2>
+                                <h2 className="font-black text-2xl text-slate-900 px-2 tracking-tighter uppercase italic">Setup</h2>
+                                <div className="bg-white p-8 rounded-[3rem] shadow-xl space-y-4">
+                                    <button onClick={exportBackup} className="w-full bg-emerald-600 text-white py-5 rounded-3xl font-black uppercase tracking-widest shadow-lg">📥 Download Backup</button>
+                                </div>
                                 <form onSubmit={e => {
                                     e.preventDefault();
                                     const fd = new FormData(e.target);
@@ -216,40 +262,39 @@
                                         pin: fd.get('p') || config.pin,
                                         appIcon: fd.get('icon') || config.appIcon
                                     });
-                                    alert("🎉 System Configuration Updated!");
+                                    alert("🎉 Updated!");
                                     setView('summary');
-                                }} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-2xl space-y-6">
+                                }} className="bg-white p-8 rounded-[3rem] shadow-2xl space-y-6">
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Choose System Icon</label>
-                                        <div className="flex gap-2 flex-wrap mb-4">
-                                            {["🏫", "📚", "💼", "🛒", "🛠️", "💡", "💰"].map(e => (
-                                                <button key={e} type="button" onClick={()=>document.getElementById('ic').value=e} className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center hover:bg-blue-100 transition-all text-2xl border shadow-sm">{e}</button>
-                                            ))}
-                                        </div>
-                                        <input id="ic" name="icon" defaultValue={config.appIcon} placeholder="Emoji" className="w-full p-5 bg-slate-50 rounded-2xl font-black outline-blue-600 border-none shadow-inner" />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">System Icon</label>
+                                        <input id="ic" name="icon" defaultValue={config.appIcon} className="w-full p-5 bg-slate-50 rounded-2xl font-black outline-blue-600 border-none" />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Business Name</label>
-                                        <input name="n" defaultValue={config.bizName} className="w-full p-5 bg-slate-50 rounded-2xl font-black outline-blue-600 border-none shadow-inner" />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 block">Biz Name</label>
+                                        <input name="n" defaultValue={config.bizName} className="w-full p-5 bg-slate-50 rounded-2xl font-black outline-blue-600 border-none" />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">New PIN</label>
-                                        <input name="p" defaultValue={config.pin} maxLength="4" className="w-full p-5 bg-slate-50 rounded-2xl font-black outline-blue-600 border-none shadow-inner" />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 block">Biz Slogan</label>
+                                        <input name="s" defaultValue={config.bizSub} className="w-full p-5 bg-slate-50 rounded-2xl font-black outline-blue-600 border-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 block">Login PIN</label>
+                                        <input name="p" defaultValue={config.pin} maxLength="4" className="w-full p-5 bg-slate-50 rounded-2xl font-black outline-blue-600 border-none" />
                                     </div>
                                     <button className="w-full bg-slate-950 text-white py-6 rounded-[2.5rem] font-black shadow-xl uppercase tracking-widest">Save Config</button>
                                 </form>
-                                <button onClick={()=>{if(confirm("DANGER: WIPE ALL DATA?")){localStorage.clear(); window.location.reload();}}} className="w-full text-red-500 text-[10px] font-black tracking-widest uppercase bg-red-50 py-6 rounded-[2.5rem] border border-red-100">⚠️ Factory Reset</button>
+                                <button onClick={()=>{if(confirm("WIPE ALL DATA?")){localStorage.clear(); window.location.reload();}}} className="w-full text-red-500 text-[10px] font-black tracking-widest uppercase bg-red-50 py-6 rounded-[2.5rem] border border-red-100">⚠️ Factory Reset</button>
                             </div>
                         )}
                     </main>
 
-                    {/* MODAL FORMS */}
+                    {/* MODAL FORMS (All merged) */}
                     {showForm && (
                         <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[100] flex items-end sm:items-center justify-center p-4">
                             <div className="bg-white w-full max-w-sm rounded-[3.5rem] p-10 shadow-2xl animate-fade-up relative">
                                 <div className="flex justify-between items-center mb-10">
-                                    <h2 className="font-black text-3xl tracking-tighter uppercase italic">Add Record</h2>
-                                    <button onClick={()=>setShowForm(false)} className="text-5xl text-slate-200 leading-none">&times;</button>
+                                    <h2 className="font-black text-3xl tracking-tighter uppercase italic">Add Entry</h2>
+                                    <button onClick={()=>setShowForm(false)} className="text-4xl text-slate-200 leading-none">&times;</button>
                                 </div>
                                 {showForm === 'inv' && (
                                     <form onSubmit={e => {
@@ -258,10 +303,10 @@
                                         setInventory([...inventory, {id:Date.now(), name:fd.get('n'), price:Number(fd.get('p')), stock:Number(fd.get('s'))}]);
                                         setShowForm(false);
                                     }} className="space-y-4">
-                                        <input name="n" placeholder="Item Name" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-blue-600 shadow-inner" required />
-                                        <input name="p" type="number" placeholder="Price (₦)" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-blue-600 shadow-inner" required />
-                                        <input name="s" type="number" placeholder="Stock Qty" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-blue-600 shadow-inner" required />
-                                        <button className="w-full bg-blue-700 text-white py-6 rounded-[2.5rem] font-black text-lg shadow-2xl mt-4">ADD TO STOCK</button>
+                                        <input name="n" placeholder="Item Name" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-blue-600" required />
+                                        <input name="p" type="number" placeholder="Price (₦)" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-blue-600" required />
+                                        <input name="s" type="number" placeholder="Stock Qty" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-blue-600" required />
+                                        <button className="w-full bg-blue-700 text-white py-6 rounded-[2.5rem] font-black text-lg mt-4">ADD TO STOCK</button>
                                     </form>
                                 )}
                                 {showForm === 'appt' && (
@@ -274,7 +319,20 @@
                                         <input name="c" placeholder="Client Name" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-purple-600 shadow-inner" required />
                                         <input name="s" placeholder="Service Needed" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-purple-600 shadow-inner" required />
                                         <input name="t" type="time" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-purple-600 shadow-inner" required />
-                                        <button className="w-full bg-purple-700 text-white py-6 rounded-[2.5rem] font-black text-lg shadow-2xl mt-4">BOOK NOW</button>
+                                        <button className="w-full bg-purple-700 text-white py-6 rounded-[2.5rem] font-black text-lg mt-4">BOOK NOW</button>
+                                    </form>
+                                )}
+                                {showForm === 'debt' && (
+                                    <form onSubmit={e => {
+                                        e.preventDefault();
+                                        const fd = new FormData(e.target);
+                                        setDebts([...debts, {id:Date.now(), client:fd.get('c'), amount:Number(fd.get('a')), reason:fd.get('r')}]);
+                                        setShowForm(false);
+                                    }} className="space-y-4">
+                                        <input name="c" placeholder="Client Name" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-orange-600 shadow-inner" required />
+                                        <input name="a" type="number" placeholder="Amount (₦)" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-orange-600 shadow-inner" required />
+                                        <input name="r" placeholder="Reason" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-orange-600 shadow-inner" required />
+                                        <button className="w-full bg-orange-600 text-white py-6 rounded-[2.5rem] font-black text-lg mt-4">LOG DEBT</button>
                                     </form>
                                 )}
                                 {showForm === 'exp' && (
@@ -284,21 +342,22 @@
                                         setExpenses([...expenses, {id:Date.now(), amount:Number(fd.get('a')), category:fd.get('c')}]);
                                         setShowForm(false);
                                     }} className="space-y-4">
-                                        <input name="c" placeholder="Reason (e.g. Fuel)" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-red-600 shadow-inner" required />
-                                        <input name="a" type="number" placeholder="Amount (₦)" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-red-600 shadow-inner" required />
-                                        <button className="w-full bg-rose-600 text-white py-6 rounded-[2.5rem] font-black text-lg shadow-2xl mt-4 tracking-widest uppercase">Log Expense</button>
+                                        <input name="c" placeholder="Reason (e.g. Fuel)" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-red-600" required />
+                                        <input name="a" type="number" placeholder="Amount (₦)" className="w-full p-6 bg-slate-50 rounded-2xl font-black outline-red-600" required />
+                                        <button className="w-full bg-rose-600 text-white py-6 rounded-[2.5rem] font-black text-lg mt-4">LOG EXPENSE</button>
                                     </form>
                                 )}
                             </div>
                         </div>
                     )}
 
-                    {/* Master Navigation Bar */}
-                    <nav className="fixed bottom-8 left-8 right-8 max-w-md mx-auto bg-white/95 backdrop-blur-2xl h-24 rounded-[3rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] flex items-center justify-around px-4 border border-white/20 z-50">
-                        <button onClick={()=>setView('summary')} className={`p-5 transition-all duration-300 rounded-[2.2rem] ${view==='summary'?'text-blue-700 scale-125 shadow-xl bg-blue-50':'text-slate-300'}`}>🏠</button>
-                        <button onClick={()=>setView('inventory')} className={`p-5 transition-all duration-300 rounded-[2.2rem] ${view==='inventory'?'text-blue-700 scale-125 shadow-xl bg-blue-50':'text-slate-300'}`}>📦</button>
-                        <button onClick={()=>setView('services')} className={`p-5 transition-all duration-300 rounded-[2.2rem] ${view==='services'?'text-blue-700 scale-125 shadow-xl bg-blue-50':'text-slate-300'}`}>📋</button>
-                        <button onClick={()=>setView('settings')} className={`p-5 transition-all duration-300 rounded-[2.2rem] ${view==='settings'?'text-blue-700 scale-125 shadow-xl bg-blue-50':'text-slate-300'}`}>⚙️</button>
+                    {/* Master Navigation Bar (Merged Tabs) */}
+                    <nav className="fixed bottom-8 left-8 right-8 max-w-md mx-auto bg-slate-900 h-24 rounded-[3rem] shadow-2xl flex items-center justify-around px-4 z-50">
+                        <button onClick={()=>setView('summary')} className={`p-4 transition-all ${view==='summary'?'text-blue-400 bg-white/10 rounded-full':'text-slate-500'}`}>🏠</button>
+                        <button onClick={()=>setView('inventory')} className={`p-4 transition-all ${view==='inventory'?'text-blue-400 bg-white/10 rounded-full':'text-slate-500'}`}>📦</button>
+                        <button onClick={()=>setView('services')} className={`p-4 transition-all ${view==='services'?'text-blue-400 bg-white/10 rounded-full':'text-slate-500'}`}>📅</button>
+                        <button onClick={()=>setView('debts')} className={`p-4 transition-all ${view==='debts'?'text-orange-400 bg-white/10 rounded-full':'text-slate-500'}`}>📝</button>
+                        <button onClick={()=>setView('settings')} className={`p-4 transition-all ${view==='settings'?'text-blue-400 bg-white/10 rounded-full':'text-slate-500'}`}>⚙️</button>
                     </nav>
                 </div>
             );
@@ -307,7 +366,26 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+
+    {/* OFFLINE SERVICE WORKER REGISTRATION */}
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+                console.log('OmniBiz: Offline Protected');
+                reg.onupdatefound = () => {
+                    const installingWorker = reg.installing;
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            if(confirm("New Update Available! Refresh now?")) window.location.reload();
+                        }
+                    };
+                };
+            })
+            .catch(err => console.log('Offline setup failed.', err));
+        });
+      }
+    </script>
 </body>
 </html>
-
-```
